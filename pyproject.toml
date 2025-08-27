@@ -1,0 +1,217 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shipboard-fire-response-rl"
+version = "1.0.0"
+description = "Advanced Reinforcement Learning system for shipboard fire response training and decision support"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Shipboard Fire Response RL Team"}
+]
+keywords = [
+    "reinforcement-learning",
+    "fire-response",
+    "maritime-safety",
+    "deep-learning",
+    "emergency-response",
+    "training-simulation",
+    "shipboard-operations",
+    "dqn",
+    "ai-training"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Education :: Computer Aided Instruction (CAI)",
+    "Topic :: Safety/Security"
+]
+requires-python = ">=3.8"
+dependencies = [
+    "torch>=2.0.0",
+    "numpy>=1.24.0",
+    "scikit-learn>=1.3.0",
+    "pandas>=2.0.0",
+    "flask>=2.3.0",
+    "flask-cors>=4.0.0",
+    "requests>=2.31.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+    "mysql-connector-python>=8.1.0",
+    "sqlalchemy>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0",
+    "psutil>=5.9.0",
+    "rich>=13.5.0",
+    "tqdm>=4.66.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.0",
+    "black>=23.7.0",
+    "flake8>=6.0.0",
+    "mypy>=1.5.0",
+    "pre-commit>=3.3.0"
+]
+aws = [
+    "boto3>=1.28.0",
+    "botocore>=1.31.0"
+]
+ml = [
+    "scipy>=1.11.0",
+    "joblib>=1.3.0",
+    "plotly>=5.15.0"
+]
+jupyter = [
+    "jupyter>=1.0.0",
+    "ipykernel>=6.25.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/mbubulka/shipboard-fire-response-rl"
+Documentation = "https://github.com/mbubulka/shipboard-fire-response-rl/wiki"
+Repository = "https://github.com/mbubulka/shipboard-fire-response-rl.git"
+"Bug Tracker" = "https://github.com/mbubulka/shipboard-fire-response-rl/issues"
+
+[project.scripts]
+shipboard-rl = "cli:main"
+
+[tool.setuptools]
+packages = ["shipboard_rl"]
+package-dir = {"" = "src"}
+
+[tool.setuptools.package-data]
+shipboard_rl = [
+    "data/*.json",
+    "data/*.yaml",
+    "models/*.pth",
+    "templates/*.html",
+    "static/*"
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py38', 'py39', 'py310', 'py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["shipboard_rl"]
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = [
+    "E203",  # whitespace before ':'
+    "E501",  # line too long
+    "W503",  # line break before binary operator
+]
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".eggs",
+    "*.egg",
+]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "torch.*",
+    "numpy.*",
+    "sklearn.*",
+    "matplotlib.*",
+    "seaborn.*",
+    "plotly.*",
+    "mysql.*",
+    "boto3.*"
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=shipboard_rl",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml"
+]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "ml: marks tests that require ML models",
+    "database: marks tests that require database"
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "setup.py",
+    "venv/*",
+    ".venv/*"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:"
+]
