@@ -56,7 +56,6 @@ lxml>=4.9.0
 
 # Security
 cryptography>=41.0.0
-hashlib-compat>=1.0.0
 
 # Utility
 tqdm>=4.66.0
