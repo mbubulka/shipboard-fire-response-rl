@@ -1,45 +1,14 @@
-"""Test configuration and fixtures for Shipboard Fire Response AI System"""
+"""Test configuration and fixtures for Shipboard Fire Response RL System"""
 
 import pytest
 import tempfile
 import os
-from unittest.mock import Mock, patch
-import mysql.connector
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import torch
+import numpy as np
 
-from shipboard_ai.config.settings import Config
-from shipboard_ai.api.server import create_app
-
-
-@pytest.fixture
-def test_config():
-    """Create a test configuration"""
-    config = Config()
-    config.TESTING = True
-    config.DATABASE_URL = "sqlite:///:memory:"
-    config.SECRET_KEY = "test-secret-key"
-    config.WTF_CSRF_ENABLED = False
-    return config
-
-
-@pytest.fixture
-def app(test_config):
-    """Create a test Flask application"""
-    app = create_app(test_config)
-    return app
-
-
-@pytest.fixture
-def client(app):
-    """Create a test client"""
-    return app.test_client()
-
-
-@pytest.fixture
-def runner(app):
-    """Create a test CLI runner"""
-    return app.test_cli_runner()
+# Set random seeds for reproducible tests
+torch.manual_seed(42)
+np.random.seed(42)
 
 
 @pytest.fixture
@@ -50,102 +19,36 @@ def temp_dir():
 
 
 @pytest.fixture
-def mock_database():
-    """Mock database connection"""
-    with patch('mysql.connector.connect') as mock_connect:
-        mock_conn = Mock()
-        mock_cursor = Mock()
-        mock_conn.cursor.return_value = mock_cursor
-        mock_connect.return_value = mock_conn
-        yield mock_conn, mock_cursor
+def sample_state():
+    """Sample state tensor for testing"""
+    return torch.randn(20)
 
 
 @pytest.fixture
-def sample_training_data():
-    """Sample training data for testing"""
+def sample_experience():
+    """Sample experience tuple for testing"""
     return {
-        "scenarios": [
-            {
-                "id": 1,
-                "scenario_type": "galley_fire",
-                "location": "galley",
-                "fire_type": "cooking_oil",
-                "severity": "moderate",
-                "response_actions": [
-                    "isolate_power",
-                    "apply_wet_chemical",
-                    "ventilate_space"
-                ],
-                "expected_outcome": "fire_suppressed",
-                "training_standards": ["NFPA_1500", "USCG_CG022"]
-            },
-            {
-                "id": 2,
-                "scenario_type": "engine_room_fire",
-                "location": "engine_room",
-                "fire_type": "fuel_oil",
-                "severity": "high",
-                "response_actions": [
-                    "emergency_shutdown",
-                    "activate_co2_system",
-                    "evacuate_personnel"
-                ],
-                "expected_outcome": "fire_suppressed",
-                "training_standards": ["NFPA_1670", "Maritime_RVSS"]
-            }
-        ]
+        'state': torch.randn(20),
+        'action': 2,
+        'reward': 1.0,
+        'next_state': torch.randn(20),
+        'done': False,
+        'source_id': 0
     }
 
 
 @pytest.fixture
-def mock_enhanced_dqn():
-    """Mock Enhanced DQN model"""
-    with patch('shipboard_ai.core.enhanced_dqn.EnhancedDQN') as mock_dqn:
-        mock_model = Mock()
-        mock_model.predict.return_value = [0.8, 0.2, 0.5, 0.9]
-        mock_model.train_step.return_value = {"loss": 0.123, "accuracy": 0.87}
-        mock_dqn.return_value = mock_model
-        yield mock_model
-
-
-@pytest.fixture
-def mock_training_manager():
-    """Mock Training Manager"""
-    with patch('shipboard_ai.training.trainer.TrainingManager') as mock_trainer:
-        mock_manager = Mock()
-        mock_manager.train_model.return_value = {
-            "epochs": 100,
-            "final_loss": 0.05,
-            "accuracy": 0.92,
-            "training_time": "2h 15m"
-        }
-        mock_trainer.return_value = mock_manager
-        yield mock_manager
-
-
-@pytest.fixture
-def api_headers():
-    """Standard API headers for testing"""
+def sample_training_batch():
+    """Sample training batch for testing"""
+    batch_size = 32
     return {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'states': torch.randn(batch_size, 20),
+        'actions': torch.randint(0, 8, (batch_size,)),
+        'rewards': torch.randn(batch_size),
+        'next_states': torch.randn(batch_size, 20),
+        'dones': torch.randint(0, 2, (batch_size,)).bool(),
+        'source_ids': torch.randint(0, 3, (batch_size,))
     }
-
-
-@pytest.fixture(scope="session")
-def test_database_url():
-    """Database URL for integration tests"""
-    return os.getenv('TEST_DATABASE_URL', 'sqlite:///:memory:')
-
-
-@pytest.fixture
-def db_session(test_database_url):
-    """Database session for testing"""
-    engine = create_engine(test_database_url)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    yield session
-    session.close()
 
 
 class TestDataHelper:
@@ -160,22 +63,18 @@ class TestDataHelper:
             "fire_type": "test_fire",
             "severity": severity,
             "response_actions": ["test_action_1", "test_action_2"],
-            "expected_outcome": "fire_suppressed",
-            "training_standards": ["NFPA_1500"]
+            "expected_outcome": "fire_suppressed"
         }
     
     @staticmethod
-    def create_training_feedback(rating=4, comments="Good response"):
-        """Create test training feedback"""
-        return {
-            "scenario_id": 1,
-            "user_id": "test_user",
-            "rating": rating,
-            "comments": comments,
-            "response_time": 120,
-            "actions_taken": ["isolate_power", "apply_suppression"],
-            "timestamp": "2024-01-01T12:00:00Z"
-        }
+    def create_random_state(state_dim=20):
+        """Create random state for testing"""
+        return torch.randn(state_dim)
+    
+    @staticmethod
+    def create_action_sequence(length=10, action_dim=8):
+        """Create sequence of random actions"""
+        return torch.randint(0, action_dim, (length,)).tolist()
 
 
 @pytest.fixture
